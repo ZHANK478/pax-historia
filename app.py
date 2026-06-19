@@ -6,7 +6,7 @@ API_KEY = st.secrets["API_KEY"]
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-st.title("GenHistoria 1.0")
+st.title("GenHistoria V1")
 
 st.write("Ты — Пьемонт-Сардиния. Бот — Австрия.")
 
