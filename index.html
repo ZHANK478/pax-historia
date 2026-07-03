@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Grand Strategy — 1852</title> 
+<style>
+/* ============ ТЁМНАЯ КАРТОГРАФИЧЕСКАЯ ТЕМА («ночной штаб») ============
+   Палитра единая с картой: глубокий чернильный океан, пергаментный текст,
+   приглушённое золото. Геометрия панелей сохранена из исходной вёрстки. */
+:root{
+  --bg0:#0a1120; --bg1:#0f1930; --bg2:#182642; --bg3:#20304f;
+  --edge:#2b3b5e; --edge-soft:#223050;
+  --ink:#e9e3d1; --ink2:#c9c3b2; --dim:#8b94aa; --faint:#6b7590;
+  --gold:#c9a959; --gold-deep:#a2843c;
+  --pos:#7cc47f; --neg:#e08072; --warn:#d9b45c;
+  --danger:#7a2418;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a1120;color:#e9e3d1;font-family:Georgia,serif;overflow:hidden;height:100vh;position:relative;user-select:none;}
+#topbar{position:absolute;top:0;left:0;right:0;height:42px;background:#0f1930;border-bottom:1px solid #c9a959;display:flex;align-items:center;z-index:100;}
+.top-stat{display:flex;align-items:center;gap:7px;padding:0 14px;height:100%;border-right:1px solid #223050;}
+.top-stat .icon{font-size:14px;filter:saturate(.55) brightness(1.05);}
+.top-stat .val{color:#e9e3d1;font-weight:bold;font-size:13px;font-variant-numeric:tabular-nums;}
+.top-stat .lbl{font-size:9px;color:#8b94aa;text-transform:uppercase;letter-spacing:.09em;}
+.stat-b{display:flex;flex-direction:column;}
+#date-disp{margin-left:auto;padding:0 16px;font-size:13px;color:#c9a959;font-style:italic;}
+#actionbar{position:absolute;top:42px;left:0;right:0;height:38px;background:#0c1526;border-bottom:1px solid #223050;display:flex;align-items:center;gap:8px;padding:0 12px;z-index:99;}
+.abtn{display:flex;align-items:center;gap:5px;background:#182642;border:1px solid #2b3b5e;color:#e9e3d1;font-size:12px;padding:5px 12px;border-radius:2px;cursor:pointer;font-family:Georgia,serif;transition:background .15s,border-color .15s;}
+.abtn:hover{background:#20304f;border-color:#c9a959;}
+.next-btn{background:#c9a959;border-color:#c9a959;color:#14100a;font-weight:bold;margin-left:auto;}
+.next-btn:hover{background:#d9bc72;border-color:#d9bc72;}
+.next-btn:disabled{background:#3a4258;border-color:#3a4258;color:#8b94aa;cursor:not-allowed;}
+.action-btn{background:#1d4d2a;border-color:#2c6e3f;color:#eaf2e6;}
+.action-btn:hover{background:#256237;border-color:#3d8a52;}
+.turn-lbl{font-size:11px;color:#6b7590;}
+#left-panel{position:absolute;top:80px;left:0;width:290px;bottom:0;background:#0f1930;border-right:1px solid #223050;z-index:90;overflow-y:auto;transition:transform .25s;}
+#left-panel.hidden{transform:translateX(-290px);}
+#toggle-btn{position:absolute;top:88px;left:290px;width:20px;height:44px;background:#182642;border:1px solid #2b3b5e;border-left:none;border-radius:0 3px 3px 0;cursor:pointer;z-index:91;display:flex;align-items:center;justify-content:center;color:#8b94aa;font-size:11px;transition:left .25s;}
+#toggle-btn.closed{left:0;}
+.portrait-block{position:relative;width:100%;background:#0c1526;}
+.portrait-img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;filter:sepia(14%) contrast(96%) brightness(.96);}
+.portrait-emoji{width:100%;aspect-ratio:3/4;background:linear-gradient(170deg,#1a2748,#0e1830);display:flex;align-items:center;justify-content:center;font-size:46px;opacity:.45;}
+.portrait-hover{position:absolute;inset:0;background:rgba(6,10,20,0.85);opacity:0;transition:opacity .2s;display:flex;flex-direction:column;justify-content:center;padding:16px;gap:4px;}
+.portrait-block:hover .portrait-hover{opacity:1;}
+.ph-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(201,169,89,0.15);color:#c9c3b2;}
+.ph-row .k{color:#8b94aa;}
+.portrait-caption{padding:10px 14px 8px;background:#0f1930;border-bottom:1px solid #223050;}
+.pc-name{font-size:14px;color:#e9e3d1;font-weight:bold;}
+.pc-title{font-size:11px;color:#8b94aa;margin-top:2px;}
+.govbadge{margin:8px 14px;background:#182642;border:1px solid #2b3b5e;border-radius:2px;padding:6px 10px;font-size:11px;color:#c9c3b2;text-align:center;letter-spacing:.03em;}
+.psec{border-bottom:1px solid #1a2846;padding:10px 14px;}
+.phdr{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#c9a959;margin-bottom:8px;}
+.cbtn{width:100%;background:#182642;border:1px solid #2b3b5e;color:#c9c3b2;font-size:11px;padding:7px 10px;text-align:left;cursor:pointer;border-radius:2px;margin-top:6px;font-family:Georgia,serif;}
+.cbtn:hover{background:#20304f;border-color:#c9a959;}
+.ccont{display:none;margin-top:8px;}
+.ccont.open{display:block;}
+.irow{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #1a2846;color:#c9c3b2;}
+.irow .k{color:#8b94aa;}
+.state-text{font-size:11px;color:#9aa3b8;line-height:1.75;margin-top:4px;}
+#map-wrap{position:absolute;top:80px;left:290px;right:0;bottom:0;cursor:grab;overflow:hidden;background:#050f2a;}
+#map-wrap:active{cursor:grabbing;}
+#map-svg{width:100%;height:100%;}
+#tooltip{position:absolute;background:rgba(12,20,38,.96);border:1px solid #2b3b5e;border-radius:3px;padding:7px 11px;font-size:12px;color:#c9c3b2;pointer-events:none;z-index:200;display:none;max-width:190px;box-shadow:0 4px 14px rgba(0,0,0,0.5);}
+#tooltip .tn{font-size:13px;color:#e9e3d1;font-weight:bold;margin-bottom:3px;}
+#tooltip .tr{color:#8b94aa;margin-top:2px;}
+
+/* СОБЫТИЯ (депеши) */
+#events-box{position:absolute;top:88px;right:14px;width:340px;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;z-index:200;display:none;box-shadow:0 8px 26px rgba(0,0,0,0.55);max-height:480px;overflow-y:auto;}
+.events-hdr{background:#182642;padding:9px 13px;border-bottom:1px solid #c9a959;font-size:13px;color:#e9e3d1;display:flex;justify-content:space-between;align-items:center;border-radius:4px 4px 0 0;position:sticky;top:0;letter-spacing:.04em;}
+.ev-item{padding:9px 13px;font-size:12px;color:#c9c3b2;border-bottom:1px solid #1a2846;line-height:1.65;}
+.ev-loading{padding:12px 13px;font-size:12px;color:#8b94aa;font-style:italic;}
+
+/* ДЕЙСТВИЯ */
+#actions-panel{position:absolute;top:88px;left:310px;width:320px;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;z-index:200;display:none;box-shadow:0 8px 26px rgba(0,0,0,0.55);}
+.actions-hdr{background:#1d4d2a;color:#eaf2e6;padding:9px 13px;border-radius:4px 4px 0 0;font-size:13px;display:flex;justify-content:space-between;align-items:center;}
+.actions-body{padding:12px 13px;}
+#actions-list{margin-bottom:10px;max-height:160px;overflow-y:auto;}
+.action-item{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid #1a2846;color:#c9c3b2;}
+.rm-btn{background:none;border:none;color:#e08072;cursor:pointer;font-size:14px;padding:0 4px;}
+#action-input{width:100%;background:#0c1526;border:1px solid #2b3b5e;color:#e9e3d1;padding:8px;border-radius:2px;font-family:Georgia,serif;font-size:12px;resize:none;height:60px;}
+#action-input:focus{outline:none;border-color:#c9a959;}
+.add-action-btn{margin-top:8px;background:#1d4d2a;border:1px solid #2c6e3f;color:#eaf2e6;padding:6px 14px;border-radius:2px;cursor:pointer;font-size:12px;font-family:Georgia,serif;width:100%;}
+.add-action-btn:hover{background:#256237;}
+
+/* СОВЕТНИК ЧАТ */
+#adv-pop{position:absolute;top:88px;left:310px;width:300px;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;z-index:200;display:none;box-shadow:0 8px 26px rgba(0,0,0,0.55);}
+.pop-hdr{background:#182642;padding:9px 13px;border-bottom:1px solid #c9a959;font-size:13px;color:#e9e3d1;display:flex;justify-content:space-between;align-items:center;border-radius:4px 4px 0 0;}
+.xbtn{cursor:pointer;color:#8b94aa;font-size:14px;}
+.xbtn:hover{color:#e9e3d1;}
+#adv-messages{height:180px;overflow-y:auto;padding:10px 13px;display:flex;flex-direction:column;gap:6px;}
+.adv-msg{font-size:12px;line-height:1.5;padding:6px 9px;border-radius:3px;max-width:90%;}
+.adv-msg.player{background:#1d3a26;align-self:flex-end;color:#d9e8d4;}
+.adv-msg.advisor{background:#182642;align-self:flex-start;color:#c9c3b2;}
+.chat-input-row{display:flex;gap:6px;padding:10px 13px;border-top:1px solid #223050;}
+.chat-input{flex:1;background:#0c1526;border:1px solid #2b3b5e;color:#e9e3d1;padding:7px;border-radius:2px;font-family:Georgia,serif;font-size:12px;}
+.chat-input:focus{outline:none;border-color:#c9a959;}
+.chat-send{background:#c9a959;border:none;color:#14100a;padding:7px 12px;border-radius:2px;cursor:pointer;font-size:12px;font-weight:bold;}
+.chat-send:hover{background:#d9bc72;}
+
+/* ДИПЛОМАТИЯ */
+#diplo-pop{position:absolute;top:88px;left:310px;width:320px;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;z-index:200;display:none;box-shadow:0 8px 26px rgba(0,0,0,0.55);}
+#diplo-countries{padding:12px 13px;display:flex;flex-direction:column;gap:6px;}
+.country-btn{background:#182642;border:1px solid #2b3b5e;color:#e9e3d1;padding:8px 12px;border-radius:2px;cursor:pointer;font-size:13px;font-family:Georgia,serif;text-align:left;}
+.country-btn:hover{background:#20304f;border-color:#c9a959;}
+#diplo-chat{display:none;}
+.diplo-chat-hdr{background:#182642;color:#e9e3d1;padding:8px 13px;font-size:12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #c9a959;}
+.back-btn{background:none;border:none;color:#c9a959;cursor:pointer;font-size:11px;}
+#diplo-messages{height:180px;overflow-y:auto;padding:10px 13px;display:flex;flex-direction:column;gap:6px;}
+.diplo-msg{font-size:12px;line-height:1.5;padding:6px 9px;border-radius:3px;max-width:92%;}
+.diplo-msg.france{background:#1c3252;align-self:flex-end;color:#d8e4f2;}
+.diplo-msg.ai{background:#182642;align-self:flex-start;color:#c9c3b2;}
+
+.notif{position:absolute;top:88px;right:14px;background:#182642;border:1px solid #c9a959;color:#e9e3d1;font-size:12px;padding:6px 12px;border-radius:3px;z-index:300;animation:fn 3s forwards;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,0.5);}
+@keyframes fn{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+#left-panel::-webkit-scrollbar{width:4px;}
+#left-panel::-webkit-scrollbar-thumb{background:#2b3b5e;border-radius:2px;}
+
+/* ПАНЕЛЬ ОТНОШЕНИЙ */
+#relations-panel{position:absolute;top:88px;left:310px;width:280px;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;z-index:200;display:none;box-shadow:0 8px 26px rgba(0,0,0,0.55);}
+.rel-hdr{background:#182642;color:#e9e3d1;padding:9px 13px;border-radius:4px 4px 0 0;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #c9a959;}
+.rel-body{padding:14px 13px;}
+.rel-leader{font-size:11px;color:#8b94aa;margin-bottom:12px;font-style:italic;}
+.rel-bar-track{background:#0c1526;border:1px solid #223050;border-radius:4px;height:10px;margin-bottom:6px;position:relative;overflow:hidden;}
+.rel-bar{height:100%;border-radius:3px;transition:width .4s,background .4s;}
+.rel-bar-labels{display:flex;justify-content:space-between;font-size:9px;color:#6b7590;margin-bottom:8px;}
+.rel-value-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.rel-value{font-size:22px;font-weight:bold;color:#e9e3d1;font-variant-numeric:tabular-nums;}
+.rel-status{font-size:13px;font-weight:bold;}
+.rel-diplo-btn{width:100%;margin-top:12px;background:#c9a959;border:none;color:#14100a;padding:8px;border-radius:2px;cursor:pointer;font-size:12px;font-family:Georgia,serif;font-weight:bold;}
+.rel-diplo-btn:hover{background:#d9bc72;}
+.rel-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;background:#182642;border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:11px;}
+.rel-stats .lbl{color:#8b94aa;}
+.rel-stats .val{font-weight:bold;color:#e9e3d1;float:right;}
+.rel-annexed{font-size:11px;color:#e08072;font-style:italic;margin-bottom:8px;}
+
+/* ИЗМЕНЕНИЯ ЗА ХОД */
+#changes-box{position:absolute;top:88px;right:368px;width:230px;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;z-index:200;display:none;box-shadow:0 8px 26px rgba(0,0,0,0.55);max-height:420px;overflow-y:auto;}
+.changes-hdr{background:#182642;color:#e9e3d1;padding:9px 13px;border-bottom:1px solid #c9a959;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-radius:4px 4px 0 0;position:sticky;top:0;}
+.chg-item{display:flex;justify-content:space-between;align-items:center;padding:7px 13px;font-size:12px;border-bottom:1px solid #1a2846;}
+.chg-item .chg-label{color:#c9c3b2;}
+.chg-item .chg-val{font-weight:bold;font-variant-numeric:tabular-nums;}
+.chg-val.pos{color:#7cc47f;}
+.chg-val.neg{color:#e08072;}
+.chg-val.neutral{color:#d9b45c;}
+.chg-empty{padding:12px 13px;font-size:11px;color:#8b94aa;font-style:italic;}
+
+/* ГЛАВНОЕ МЕНЮ */
+body.menu-mode .game-ui{display:none !important;}
+#main-menu{position:absolute;inset:0;z-index:400;display:flex;flex-direction:column;align-items:center;padding-top:60px;pointer-events:none;}
+#main-menu .menu-title{font-size:40px;color:#e9e3d1;text-shadow:0 2px 14px rgba(0,0,0,0.85);letter-spacing:.14em;margin-bottom:10px;pointer-events:auto;font-weight:normal;}
+#main-menu .menu-hint{font-size:13px;color:#c9c3b2;background:rgba(10,17,32,0.78);border:1px solid #2b3b5e;padding:8px 18px;border-radius:18px;margin-bottom:18px;pointer-events:auto;}
+#main-menu .menu-btns{display:flex;gap:12px;pointer-events:auto;}
+.menu-btn{background:#182642;border:1px solid #2b3b5e;color:#e9e3d1;padding:10px 22px;border-radius:2px;cursor:pointer;font-size:14px;font-family:Georgia,serif;box-shadow:0 4px 14px rgba(0,0,0,0.45);}
+.menu-btn:hover{background:#20304f;border-color:#c9a959;}
+
+/* МЕНЮ ПАУЗЫ */
+#pause-menu{position:absolute;inset:0;z-index:500;background:rgba(4,8,18,0.7);display:none;align-items:center;justify-content:center;}
+.pause-box{background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;padding:26px 30px;min-width:260px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
+.pause-box h3{font-size:16px;color:#e9e3d1;margin-bottom:18px;letter-spacing:.06em;}
+.pause-box button{display:block;width:100%;margin-bottom:10px;background:#182642;border:1px solid #2b3b5e;color:#e9e3d1;padding:10px;border-radius:2px;cursor:pointer;font-size:13px;font-family:Georgia,serif;}
+.pause-box button:hover{background:#20304f;border-color:#c9a959;}
+.pause-box button.danger{background:#5c1d13;border-color:#7a2418;color:#f0d9d4;}
+.pause-box button.danger:hover{background:#7a2418;}
+#menu-btn{background:#182642;border-color:#2b3b5e;color:#e9e3d1;}
+#auto-btn.active-auto{background:#6e4a16;border-color:#8a5e1e;color:#f2e2c8;}
+#map-mode-tabs{position:absolute;bottom:14px;left:14px;z-index:95;display:flex;gap:0;border:1px solid #2b3b5e;border-radius:3px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.5);}
+.map-mode-btn{background:#0f1930;border:none;color:#8b94aa;font-size:11px;padding:6px 12px;cursor:pointer;font-family:Georgia,serif;}
+.map-mode-btn:not(:last-child){border-right:1px solid #223050;}
+.map-mode-btn:hover{background:#182642;color:#c9c3b2;}
+.map-mode-btn.active{background:#c9a959;color:#14100a;font-weight:bold;}
+#menu-btn:hover{background:#20304f;}
+
+/* ЭКРАН ЗАГРУЗКИ ИГРЫ */
+#load-menu{position:absolute;inset:0;z-index:500;background:rgba(4,8,18,0.7);display:none;align-items:center;justify-content:center;}
+.load-box{background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;padding:22px 24px;min-width:380px;max-width:460px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
+.load-box h3{font-size:16px;color:#e9e3d1;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+#save-list{overflow-y:auto;margin-bottom:12px;}
+.save-item{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:1px solid #223050;background:#121e38;border-radius:3px;margin-bottom:7px;}
+.save-item:hover{border-color:#2b3b5e;background:#182642;}
+.save-title{font-size:12px;color:#e9e3d1;font-weight:bold;}
+.save-sub{font-size:11px;color:#8b94aa;margin-top:2px;}
+.save-actions{display:flex;gap:6px;}
+.save-play-btn,.save-del-btn{border:none;border-radius:2px;padding:6px 10px;cursor:pointer;font-size:13px;}
+.save-play-btn{background:#1d4d2a;color:#eaf2e6;}
+.save-play-btn:hover{background:#256237;}
+.save-del-btn{background:#5c1d13;color:#f0d9d4;}
+.save-del-btn:hover{background:#7a2418;}
+.load-close-btn{background:#182642;border:1px solid #2b3b5e;color:#e9e3d1;padding:9px;border-radius:2px;cursor:pointer;font-size:13px;font-family:Georgia,serif;}
+.load-close-btn:hover{background:#20304f;border-color:#c9a959;}
+
+/* НАСТРОЙКИ ОТОБРАЖЕНИЯ */
+#settings-panel{position:absolute;inset:0;z-index:500;background:rgba(4,8,18,0.7);display:none;align-items:center;justify-content:center;}
+.settings-box{background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;padding:24px 26px;min-width:300px;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
+.settings-box h3{font-size:16px;color:#e9e3d1;margin-bottom:16px;}
+.setting-row{margin-bottom:16px;}
+.setting-row label{font-size:12px;color:#c9c3b2;display:flex;align-items:center;gap:8px;}
+.setting-row input[type=range]{width:100%;margin-top:6px;accent-color:#c9a959;}
+.setting-row .setting-val{font-size:11px;color:#8b94aa;float:right;}
+
+/* РЕДАКТОР СЦЕНАРИЕВ */
+#editor-screen{position:absolute;inset:0;z-index:410;background:#0a1120;display:none;flex-direction:row;}
+#editor-sidebar{width:270px;background:#0f1930;border-right:1px solid #223050;display:flex;flex-direction:column;box-shadow:2px 0 14px rgba(0,0,0,0.4);}
+.editor-hdr{background:#182642;color:#e9e3d1;padding:10px 13px;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #c9a959;}
+.editor-body{padding:12px 13px;overflow-y:auto;flex:1;}
+.editor-hint{font-size:11px;color:#9aa3b8;line-height:1.6;margin-bottom:10px;background:#121e38;border:1px solid #223050;padding:8px;border-radius:3px;}
+.editor-btn{width:100%;background:#182642;border:1px solid #2b3b5e;color:#e9e3d1;padding:8px;border-radius:2px;cursor:pointer;font-size:12px;font-family:Georgia,serif;margin-bottom:7px;}
+.editor-btn:hover{background:#20304f;border-color:#c9a959;}
+.editor-btn.danger{background:#5c1d13;border-color:#7a2418;color:#f0d9d4;}
+.editor-btn.danger:hover{background:#7a2418;}
+.editor-btn.ghost{background:#0c1526;color:#8b94aa;}
+.editor-btn.ghost:hover{background:#182642;color:#c9c3b2;}
+.editor-btn.active{background:#6e4a16;border-color:#c9a959;color:#f2e2c8;}
+.editor-mode-row{display:flex;gap:6px;margin-bottom:9px;}
+.editor-mode-row .editor-btn{margin-bottom:0;}
+#editor-draw-status{font-size:11px;color:#7cc47f;font-weight:bold;margin-bottom:8px;display:none;}
+#editor-province-list{margin-top:10px;}
+.eprov-item{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #223050;background:#121e38;border-radius:3px;margin-bottom:6px;font-size:11px;}
+.eprov-name{font-weight:bold;color:#e9e3d1;}
+.eprov-actions{display:flex;gap:4px;}
+.eprov-actions button{border:1px solid #2b3b5e;border-radius:2px;padding:3px 6px;cursor:pointer;font-size:11px;background:#182642;color:#c9c3b2;}
+.eprov-actions button:hover{background:#20304f;}
+#editor-canvas-wrap{flex:1;position:relative;background:#050f2a;overflow:hidden;}
+#editor-svg{width:100%;height:100%;cursor:crosshair;}
+
+/* Список карт */
+.map-tpl-item,.map-saved-item{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:1px solid #223050;background:#121e38;border-radius:3px;margin-bottom:7px;cursor:pointer;}
+.map-tpl-item:hover,.map-saved-item:hover{background:#182642;border-color:#2b3b5e;}
+.map-item-name{font-size:12px;font-weight:bold;color:#e9e3d1;}
+.map-item-sub{font-size:10px;color:#8b94aa;}
+
+/* Форма сохранения новой провинции */
+#editor-save-form{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:600;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;padding:20px;width:260px;box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;}
+#editor-save-form h4{font-size:14px;margin-bottom:12px;color:#e9e3d1;}
+#editor-save-form input{width:100%;padding:7px;margin-bottom:9px;border:1px solid #2b3b5e;background:#0c1526;color:#e9e3d1;border-radius:2px;font-family:Georgia,serif;font-size:12px;}
+
+/* Форма сохранения карты */
+#editor-map-name-form{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:600;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;padding:20px;width:260px;box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;}
+#editor-map-name-form h4{font-size:14px;margin-bottom:12px;color:#e9e3d1;}
+#editor-loadmap-form{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:600;background:#0f1930;border:1px solid #2b3b5e;border-radius:4px;padding:20px;width:300px;box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;color:#e9e3d1;}
+#editor-loadmap-form h4{font-size:14px;margin-bottom:10px;}
+#editor-map-name-form input{width:100%;padding:7px;margin-bottom:9px;border:1px solid #2b3b5e;background:#0c1526;color:#e9e3d1;border-radius:2px;font-family:Georgia,serif;font-size:12px;}
+
+/* Единые тёмные скроллбары и селекты */
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-track{background:#0c1526;}
+::-webkit-scrollbar-thumb{background:#2b3b5e;border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:#3a4d78;}
+select{background:#182642;color:#e9e3d1;border:1px solid #2b3b5e;border-radius:2px;padding:4px 6px;font-family:Georgia,serif;font-size:12px;}
+input[type=checkbox]{accent-color:#c9a959;}
+</style>
+</head>
+<body class="menu-mode">
+
+<div id="topbar" class="game-ui">
+  <div class="top-stat" style="cursor:pointer" onclick="openEconomyPanel()" title="Открыть вкладку Экономика"><span class="icon">💰</span><div class="stat-b"><span class="lbl">Казна</span><span class="val" id="treasury">4 200 фр.</span></div></div>
+  <div class="top-stat" style="cursor:pointer" onclick="openEconomyPanel()" title="Открыть вкладку Экономика"><span class="icon">📈</span><div class="stat-b"><span class="lbl">Доход/мес</span><span class="val" id="income">+580 фр.</span></div></div>
+  <div class="top-stat"><span class="icon">⚔️</span><div class="stat-b"><span class="lbl">Армия</span><span class="val" id="army">400 000</span></div></div>
+  <div class="top-stat"><span class="icon">🌾</span><div class="stat-b"><span class="lbl">Стабильность</span><span class="val" id="stab">81</span></div></div>
+  <div class="top-stat"><span class="icon">🏦</span><div class="stat-b"><span class="lbl">Долг</span><span class="val" id="debt">—</span></div></div>
+  <div class="top-stat"><span class="icon">📉</span><div class="stat-b"><span class="lbl">Инфляция</span><span class="val" id="infl">0%</span></div></div>
+  <div id="date-disp">Январь 1852 г.</div>
+</div>
+
+<div id="actionbar" class="game-ui">
+  <button class="abtn action-btn" onclick="openActionsPanel()">⚡ Действия</button>
+  <button class="abtn" onclick="togglePop('diplo-pop','adv-pop')">📜 Дипломатия</button>
+  <button class="abtn" onclick="togglePop('adv-pop','diplo-pop')">🎭 Советник</button>
+  <button class="abtn" onclick="openEconomyPanel()">💼 Экономика</button>
+  <button class="abtn" onclick="openSocietyScreen()">👥 Общество</button>
+  <button class="abtn" onclick="openHistoryPanel()">📜 История</button>
+  <span class="turn-lbl" id="turn-info">Ход 1</span>
+  <select id="skip-select" onchange="onSkipChange()" style="margin-left:auto;padding:5px 8px;font-family:Georgia,serif;font-size:12px;border:1px solid #aaa;border-radius:3px;background:#0f1930" title="Шаг времени за один ход">
+    <option value="week">Неделя</option>
+    <option value="m1" selected>Месяц</option>
+    <option value="m3">3 месяца</option>
+    <option value="m6">6 месяцев</option>
+    <option value="m12">Год</option>
+    <option value="m60">5 лет</option>
+  </select>
+  <button class="abtn next-btn" style="margin-left:0" onclick="nextTurn()">Следующий ход ▶</button>
+  <button class="abtn" id="auto-btn" onclick="toggleAutoPlay()" title="Автоматически пропускать время выбранным шагом, пока не остановите">⏩ Авто</button>
+  <button class="abtn" id="menu-btn" onclick="openPauseMenu()">☰ Меню</button>
+</div>
+
+<button id="toggle-btn" class="game-ui" onclick="togglePanel()">◀</button>
+
+<!-- ГЛАВНОЕ МЕНЮ -->
+<div id="main-menu">
+  <div class="menu-title">GRAND STRATEGY</div>
+  <div class="menu-hint" id="menu-hint">Нажмите на страну на карте, чтобы начать за неё новую игру</div>
+  <div class="menu-btns">
+    <button id="continue-btn" class="menu-btn" onclick="continueGame()" style="display:none">▶ Продолжить</button>
+    <button class="menu-btn" onclick="openLoadMenu()">🗂 Загрузить игру</button>
+    <button class="menu-btn" onclick="openScenarioMenu()">🎲 Сценарии</button>
+    <button class="menu-btn" onclick="openScenarioEditor()">🛠 Редактор сценариев</button>
+    <button class="menu-btn" onclick="openModelMenu()">🧠 Модель ИИ</button>
+  </div>
+</div>
+
+<!-- ВЫБОР СЦЕНАРИЯ -->
+<div id="scenario-menu" style="position:absolute;inset:0;z-index:500;background:rgba(10,10,15,0.65);display:none;align-items:center;justify-content:center;">
+  <div class="load-box">
+    <h3><span>🎲 Выбор сценария</span><span class="xbtn" onclick="closeScenarioMenu()">✕</span></h3>
+    <div style="font-size:11px;color:#95a0b8;margin-bottom:10px;line-height:1.5">Сценарии создаются в редакторе («Создать сценарий» → «Сохранить сценарий в игру»). Любая страна любого сценария играбельна — ИИ сам заполнит её правителя, показатели и интересы под год сценария.</div>
+    <div id="scenario-menu-list" style="overflow-y:auto;margin-bottom:12px"></div>
+    <button class="load-close-btn" onclick="closeScenarioMenu()">Закрыть</button>
+  </div>
+</div>
+
+<!-- BREAKING NEWS — большой экран для исторически значимых событий -->
+<div id="breaking-news" style="position:absolute;inset:0;z-index:600;background:rgba(8,8,10,0.82);display:none;align-items:center;justify-content:center;">
+  <div style="background:#f6f2e8;border:3px double #222;max-width:560px;width:86%;padding:30px 36px;box-shadow:0 12px 50px rgba(0,0,0,0.6);text-align:center;font-family:Georgia,serif;">
+    <div style="font-size:11px;letter-spacing:.35em;color:#8a1a1a;text-transform:uppercase;margin-bottom:8px">‼️ Срочно · Экстренный выпуск</div>
+    <div id="breaking-title" style="font-size:30px;font-weight:bold;color:#111;line-height:1.2;margin-bottom:12px;text-transform:uppercase"></div>
+    <div style="width:60px;height:2px;background:#222;margin:0 auto 14px"></div>
+    <div id="breaking-text" style="font-size:15px;color:#333;line-height:1.7;margin-bottom:16px"></div>
+    <div id="breaking-date" style="font-size:11px;color:#888;font-style:italic;margin-bottom:18px"></div>
+    <button class="menu-btn" onclick="closeBreakingNews()" style="background:#222">Прочитано</button>
+  </div>
+</div>
+
+<!-- РЕДАКТОР СЦЕНАРИЕВ — полностью отдельная песочница, не связана с игровой картой -->
+<div id="editor-screen">
+  <div id="editor-sidebar">
+    <div class="editor-hdr">
+      <span>🛠 Редактор сценариев</span>
+      <span class="xbtn" onclick="closeScenarioEditor()">✕</span>
+    </div>
+    <div class="editor-body">
+
+      <!-- Главный экран редактора: два независимых раздела -->
+      <div id="editor-view-hub">
+        <div class="editor-hint">«Карты» — рисуете/импортируете контуры провинций (без стран). «Создать сценарий» — берёте готовую карту и назначаете провинциям владельцев (страны).</div>
+        <button class="editor-btn" onclick="backToMapsList()" style="margin-bottom:10px">🗺️ Карты</button>
+        <button class="editor-btn" onclick="openScenarioPicker()" style="margin-bottom:10px">🏳️ Создать сценарий</button>
+        <button class="editor-btn ghost" onclick="closeScenarioEditor()">🚪 Выйти в меню</button>
+      </div>
+
+      <!-- Вкладка: список карт -->
+      <div id="editor-view-maps" style="display:none">
+        <div class="editor-hint">Карты — отдельная песочница. Здесь нет стран и игровой механики, только контуры для рисования провинций.</div>
+        <div class="map-tpl-item" onclick="newMapFromTemplate('nuts-europe')">
+          <div><div class="map-item-name">🌐 Мир по уровням</div><div class="map-item-sub">Крупно — страны мира · Средне/Мелко — субрегионы Европы (NUTS) · плюс отдельный слой областей/штатов мира</div></div>
+        </div>
+        <div class="map-tpl-item" onclick="newMapFromTemplate('blank')">
+          <div><div class="map-item-name">⬜ Пустая карта</div><div class="map-item-sub">Чистый холст</div></div>
+        </div>
+        <div style="margin:14px 0 8px;font-size:10px;text-transform:uppercase;color:#707c98;letter-spacing:.05em">Сохранённые карты</div>
+        <div id="editor-saved-maps-list"></div>
+        <button class="editor-btn ghost" onclick="openScenarioHub()" style="margin-top:14px">◀ Назад</button>
+      </div>
+
+      <!-- Создание сценария: шаг 1 — выбрать карту -->
+      <div id="editor-view-scenario-pick" style="display:none">
+        <div class="editor-hint">Выберите сохранённую карту — на её основе назначите провинциям владельцев (страны).</div>
+        <div id="editor-scenario-pick-list"></div>
+        <button class="editor-btn ghost" onclick="openScenarioHub()" style="margin-top:14px">◀ Назад</button>
+      </div>
+
+      <!-- Создание сценария: шаг 2 — назначение владельцев -->
+      <div id="editor-view-scenario-build" style="display:none">
+        <div class="editor-hint">Введите ЛЮБУЮ страну (хоть сотню разных), выберите цвет, кликайте провинции на карте и жмите «Готово». Провинции без владельца останутся ничейными. ИИ сам заполнит правителей, показатели и интересы каждой страны под год сценария.</div>
+        <div class="setting-row" style="margin-bottom:8px">
+          <label style="display:block;margin-bottom:4px">Название сценария</label>
+          <input type="text" id="scenario-name-input" placeholder="Например: Мир 1900" style="width:100%;padding:6px;font-family:Georgia,serif;font-size:12px;border:1px solid #2b3b5e;border-radius:3px">
+        </div>
+        <div class="setting-row" style="margin-bottom:8px">
+          <label style="display:block;margin-bottom:4px">Год начала</label>
+          <input type="number" id="scenario-year-input" value="1852" style="width:100%;padding:6px;font-family:Georgia,serif;font-size:12px;border:1px solid #2b3b5e;border-radius:3px">
+        </div>
+        <div class="setting-row" style="margin-bottom:8px">
+          <label style="display:block;margin-bottom:4px">Страна (любая, свободный ввод)</label>
+          <input type="text" id="scenario-country-input" list="scenario-country-datalist" placeholder="Например: Османская империя" style="width:100%;padding:6px;font-family:Georgia,serif;font-size:12px;border:1px solid #2b3b5e;border-radius:3px">
+          <datalist id="scenario-country-datalist"></datalist>
+        </div>
+        <div class="setting-row" style="margin-bottom:10px">
+          <label style="display:block;margin-bottom:4px">Цвет страны</label>
+          <input type="color" id="scenario-color-input" value="#2a5aa8" style="width:100%;height:32px;border:1px solid #2b3b5e;border-radius:3px">
+        </div>
+        <div style="font-size:11px;color:#a6aec4;margin-bottom:8px">Выделено кликами: <b id="scenario-selected-count">0</b></div>
+        <button class="editor-btn" onclick="assignScenarioSelectionToCountry()" style="margin-bottom:10px">✅ Готово (закрепить за страной)</button>
+        <button class="editor-btn ghost" onclick="clearSelection()" style="margin-bottom:14px">✖ Снять выделение</button>
+        <div style="font-size:10px;text-transform:uppercase;color:#707c98;letter-spacing:.05em;margin-bottom:6px">Уже назначено</div>
+        <div id="scenario-summary-list" style="margin-bottom:14px"></div>
+        <button class="editor-btn" onclick="saveScenarioToGame()" style="margin-bottom:8px">🎲 Сохранить сценарий в игру</button>
+        <button class="editor-btn ghost" onclick="exportScenarioToFile()" style="margin-bottom:8px">📥 Скачать сценарий файлом</button>
+        <button class="editor-btn ghost" onclick="openScenarioHub()">◀ Назад</button>
+      </div>
+
+      <!-- Вкладка: рисование -->
+      <div id="editor-view-draw" style="display:none">
+        <div class="editor-hint">Клик по готовой границе на карте — сразу импортирует её как провинцию (границы уже готовые данные, не рисунок). Для новых фигур: клик — точка («Точки»), зажать и вести мышь — линия («Карандаш»). Новые линии липнут к существующим границам.</div>
+        <button class="editor-btn ghost" onclick="importVisibleFeatures()">📥 Импортировать видимые</button>
+        <button class="editor-btn ghost" onclick="importWholeMapFork()" style="margin-bottom:10px">🍴 Форкнуть карту целиком</button>
+        <button class="editor-btn ghost" onclick="openLoadMapPicker()" style="margin-bottom:10px">📂 Взять части из другой карты</button>
+        <div id="nuts-level-switcher" style="display:none;margin-bottom:10px">
+          <div style="font-size:10px;text-transform:uppercase;color:#707c98;letter-spacing:.05em;margin-bottom:5px">Детализация границ (NUTS)</div>
+          <div class="editor-mode-row">
+            <button class="editor-btn" id="nuts-lvl-1-btn" onclick="switchNutsLevel(1)" style="font-size:11px">Крупно (1)</button>
+            <button class="editor-btn" id="nuts-lvl-2-btn" onclick="switchNutsLevel(2)" style="font-size:11px">Средне (2)</button>
+            <button class="editor-btn" id="nuts-lvl-3-btn" onclick="switchNutsLevel(3)" style="font-size:11px">Мелко (3)</button>
+          </div>
+          <div style="font-size:10px;color:#7e89a3;margin-top:4px;line-height:1.4">Крупно — целые страны всего мира. Средне/Мелко — субрегионы Европы. У больших стран берите мелкий уровень, у мелких — крупный. Уже импортированные провинции не пропадают.</div>
+          <button class="editor-btn ghost" id="admin1-toggle-btn" onclick="toggleWorldAdmin1()" style="margin-top:8px;font-size:11px">🌍 Показать области/штаты мира (Admin-1)</button>
+          <div style="font-size:10px;color:#7e89a3;margin-top:4px;line-height:1.4">Отдельный слой: области и штаты всего мира (США, Россия и др.). Большой файл — грузится с паузой. Нажмите ещё раз, чтобы выключить.</div>
+        </div>
+        <button class="editor-btn ghost" id="undo-btn" onclick="undoLastChange()" style="margin-bottom:10px" disabled>↩ Отменить последнее</button>
+        <div class="setting-row" style="margin-bottom:6px">
+          <label style="display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="selection-mode-check" onchange="toggleSelectionMode(this.checked)">
+            Выделять клики по карте
+          </label>
+        </div>
+        <button class="editor-btn ghost" id="clear-sel-btn" onclick="clearSelection()" style="display:none;margin-bottom:10px">✖ Снять выделение (<span id="sel-count">0</span>)</button>
+        <button class="editor-btn danger" id="delete-sel-btn" onclick="deleteSelectedProvinces()" style="display:none;margin-bottom:10px">🗑 Удалить выбранные (<span id="del-count">0</span>)</button>
+        <button class="editor-btn ghost" id="merge-selected-btn" onclick="mergeSelectedProvinces()" style="display:none;margin-bottom:10px">🔗 Объединить выбранные (<span id="merge-selected-count">0</span>)</button>
+        <div class="setting-row" style="margin-bottom:6px">
+          <label style="display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="editor-show-labels" checked onchange="onToggleProvinceLabels(this.checked)">
+            Показывать названия провинций
+          </label>
+        </div>
+        <div class="setting-row" style="margin-bottom:10px">
+          <label style="display:block">Размер названий<span class="setting-val" id="editor-label-scale-val">1.0×</span></label>
+          <input type="range" id="editor-label-scale-slider" min="0.3" max="2.5" step="0.1" value="1" oninput="onChangeProvinceLabelScale(this.value)">
+        </div>
+        <div class="editor-mode-row">
+          <button class="editor-btn active" id="mode-point-btn" onclick="setDrawMode('point')">• Точки</button>
+          <button class="editor-btn" id="mode-pencil-btn" onclick="setDrawMode('pencil')">🖊 Карандаш</button>
+        </div>
+        <div class="setting-row" style="margin-bottom:10px">
+          <label style="display:block">Толщина линии<span class="setting-val" id="editor-stroke-val">0.6</span></label>
+          <input type="range" id="editor-stroke-slider" min="0.1" max="3" step="0.1" value="0.6" oninput="onChangeEditorStroke(this.value)">
+        </div>
+        <div id="editor-draw-status">✏️ Рисование... точек: <span id="editor-point-count">0</span></div>
+        <button class="editor-btn" id="editor-new-btn" onclick="startDrawingProvince()">➕ Новая провинция</button>
+        <button class="editor-btn ghost" id="editor-finish-btn" onclick="finishDrawingProvince()" style="display:none">✅ Готово</button>
+        <button class="editor-btn danger" id="editor-cancel-btn" onclick="cancelDrawingProvince()" style="display:none">✖ Отменить рисование</button>
+        <div id="editor-province-list"></div>
+        <button class="editor-btn" onclick="promptSaveMap()" style="margin-top:10px">💾 Сохранить карту</button>
+        <button class="editor-btn ghost" onclick="exportMapToFile()" style="margin-top:7px">📥 Скачать карту в файл</button>
+        <button class="editor-btn ghost" onclick="backToMapsList()">◀ К списку карт</button>
+      </div>
+
+    </div>
+  </div>
+  <div id="editor-canvas-wrap">
+    <svg id="editor-svg" viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg">
+      <rect width="960" height="560" fill="#050f2a"/>
+      <g id="editor-bg-g"></g>
+      <g id="editor-draw-g"></g>
+    </svg>
+  </div>
+</div>
+
+<!-- ФОРМА СОХРАНЕНИЯ ПРОВИНЦИИ -->
+<div id="editor-save-form">
+  <h4>Новая провинция</h4>
+  <input type="text" id="eform-name" placeholder="Название провинции">
+  <button class="editor-btn" onclick="saveDrawnProvince()">💾 Сохранить</button>
+  <button class="editor-btn ghost" onclick="discardDrawnProvince()">Отмена</button>
+</div>
+
+<!-- ФОРМА СОХРАНЕНИЯ КАРТЫ -->
+<div id="editor-map-name-form">
+  <h4>Название карты</h4>
+  <input type="text" id="emap-name" placeholder="Например: Европа v1">
+  <button class="editor-btn" onclick="confirmSaveMap()">💾 Сохранить</button>
+  <button class="editor-btn ghost" onclick="document.getElementById('editor-map-name-form').style.display='none'">Отмена</button>
+</div>
+
+<!-- ПИКЕР: ВЗЯТЬ ЧАСТИ ИЗ ДРУГОЙ СОХРАНЁННОЙ КАРТЫ -->
+<div id="editor-loadmap-form">
+  <h4>Взять части из карты</h4>
+  <div style="font-size:11px;color:#95a0b8;margin-bottom:10px;line-height:1.5">Выбранная карта появится на холсте как фон. Кликайте нужные провинции — они добавятся в текущую карту. Уже сделанное не пропадёт.</div>
+  <div id="editor-loadmap-list" style="max-height:260px;overflow-y:auto;margin-bottom:10px"></div>
+  <button class="editor-btn ghost" onclick="closeLoadMapPicker()">Закрыть</button>
+</div>
+
+<!-- ЭКРАН ЗАГРУЗКИ ИГРЫ -->
+<div id="load-menu">
+  <div class="load-box">
+    <h3><span>🗂 Загрузить игру</span><span class="xbtn" onclick="closeLoadMenu()">✕</span></h3>
+    <div id="save-list"></div>
+    <button class="load-close-btn" onclick="closeLoadMenu()">Закрыть</button>
+  </div>
+</div>
+
+<!-- МЕНЮ ПАУЗЫ -->
+<div id="pause-menu">
+  <div class="pause-box">
+    <h3>⏸ Меню</h3>
+    <button onclick="closePauseMenu()">▶ Продолжить</button>
+    <button onclick="pauseSaveGame()">💾 Сохранить игру</button>
+    <button onclick="openSettings()">⚙ Настройки</button>
+    <button class="danger" onclick="pauseRestart()">🔄 Начать заново</button>
+    <button onclick="pauseExitToMenu()">🚪 Выйти в меню</button>
+  </div>
+</div>
+
+<!-- НАСТРОЙКИ ОТОБРАЖЕНИЯ -->
+<div id="settings-panel">
+  <div class="settings-box">
+    <h3>⚙ Настройки отображения</h3>
+    <div class="setting-row">
+      <label>
+        <input type="checkbox" id="setting-show-countries" checked onchange="onToggleShowCountries(this.checked)">
+        Показывать названия стран на карте
+      </label>
+    </div>
+    <div class="setting-row">
+      <label>Размер названий стран<span class="setting-val" id="setting-label-scale-val">1.2×</span></label>
+      <input type="range" id="setting-label-scale" min="0.5" max="3" step="0.1" value="1.2" oninput="onChangeLabelScale(this.value)">
+    </div>
+    <div class="setting-row">
+      <label>Размер отображения сущностей<span class="setting-val" id="setting-obj-scale-val">1.8×</span></label>
+      <div style="font-size:10px;color:#707c98;margin-top:2px">Армии, делегации, штабы и другие объекты на карте</div>
+      <input type="range" id="setting-obj-scale" min="0.5" max="3" step="0.1" value="1.8" oninput="onChangeObjectScale(this.value)">
+    </div>
+    <div class="setting-row">
+      <label>
+        <input type="checkbox" id="setting-auto-portraits" checked onchange="onToggleAutoPortraits(this.checked)">
+        Автогенерация портрета правителя (ИИ)
+      </label>
+      <div style="font-size:10px;color:#707c98;margin-top:2px">Портрет рисуется ИИ при новой игре и каждой смене правителя</div>
+    </div>
+    <button class="load-close-btn" onclick="closeSettings()">Закрыть</button>
+  </div>
+</div>
+
+<div id="left-panel" class="game-ui">
+  <div class="portrait-block">
+    <img class="portrait-img" id="ruler-portrait" style="display:none" alt="Портрет правителя"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+    <div class="portrait-emoji" id="ruler-portrait-emoji">👑</div>
+    <div class="portrait-hover">
+      <div class="ph-row"><span class="k">Возраст</span><span id="ph-age">—</span></div>
+      <div class="ph-row"><span class="k">Правит с</span><span id="ph-since">—</span></div>
+      <div class="ph-row"><span class="k">Правление</span><span id="ph-gov">—</span></div>
+      <div class="ph-row"><span class="k">Вера</span><span id="ph-faith">—</span></div>
+    </div>
+  </div>
+  <div class="portrait-caption">
+    <div class="pc-name" id="ruler-name">Луи-Наполеон Бонапарт</div>
+    <div class="pc-title" id="ruler-title">Президент Французской республики</div>
+    <button class="cbtn" id="portrait-gen-btn" onclick="onGeneratePortraitClick()" style="margin-top:6px">🎨 Сгенерировать портрет (ИИ)</button>
+  </div>
+  <div class="govbadge" id="country-name-badge" style="font-weight:bold">🏳️ Франция</div>
+  <div class="govbadge" id="govbadge-text">🏛 Президентская республика</div>
+
+  <div class="psec">
+    <button class="cbtn" onclick="toggle('pm')">▶ Глава правительства</button>
+    <div class="ccont" id="pm">
+      <div class="portrait-block">
+        <img class="portrait-img" id="pm-portrait" style="display:none" alt="Портрет главы правительства"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="portrait-emoji" id="pm-portrait-emoji" style="font-size:48px;">🎩</div>
+      </div>
+      <div class="portrait-caption">
+        <div class="pc-name" id="pm-name" style="font-size:13px">Эжен Руэр</div>
+        <div class="pc-title" id="pm-title">Министр-президент</div>
+        <button class="cbtn" id="pm-portrait-gen-btn" onclick="onGeneratePmPortraitClick()" style="margin-top:6px">🎨 Портрет премьера (ИИ)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <button class="cbtn" onclick="toggle('parl')">▶ Парламент</button>
+    <div class="ccont" id="parl">
+      <div id="parliament-box"></div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <button class="cbtn" onclick="toggle('religion')">▶ Религия</button>
+    <div class="ccont" id="religion">
+      <div id="religion-box"></div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <button class="cbtn" onclick="toggle('church')">▶ Церковь</button>
+    <div class="ccont" id="church">
+      <div id="church-box"></div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <button class="cbtn" onclick="toggle('country')">▶ Данные страны</button>
+    <div class="ccont" id="country">
+      <div class="irow"><span class="k">Население</span><span id="country-pop">35.8 млн</span></div>
+      <div class="irow"><span class="k">Площадь</span><span id="country-area">551 000 км²</span></div>
+      <div class="irow"><span class="k">Столица</span><span id="country-capital">Париж</span></div>
+      <div class="irow"><span class="k">ВВП</span><span id="country-gdp">~14 млрд фр.</span></div>
+    </div>
+  </div>
+
+  <div class="psec">
+    <div class="phdr">Положение страны</div>
+    <div class="state-text" id="country-blurb">Франция в 1852 году переживает переходный период. Луи-Наполеон готовится провозгласить Вторую империю. Экономика растёт, но политическое напряжение высоко.</div>
+  </div>
+</div>
+
+<div id="map-wrap">
+  <div id="map-mode-tabs" class="game-ui">
+    <button id="map-mode-political" class="map-mode-btn active" onclick="setMapMode('political')">🗺 Политическая карта</button>
+    <button id="map-mode-alliance" class="map-mode-btn" onclick="setMapMode('alliance')">🤝 Карта альянсов</button>
+  </div>
+  <svg id="map-svg" viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg">
+    <rect width="960" height="560" fill="#050f2a"/>
+    <g id="world-g"></g>
+    <g id="spain-g"></g>
+    <g id="france-g"></g>
+    <g id="provinces-g"></g>
+    <g id="labels-g"></g>
+    <g id="objects-g"></g>
+  </svg>
+</div>
+
+<div id="tooltip"><div class="tn" id="t-name">—</div><div class="tr" id="t-info">—</div></div>
+
+<!-- ИЗМЕНЕНИЯ ЗА ХОД -->
+<div id="changes-box">
+  <div class="changes-hdr">
+    <span>📊 Изменения за ход</span>
+    <span class="xbtn" onclick="document.getElementById('changes-box').style.display='none'">✕</span>
+  </div>
+  <div id="changes-list"></div>
+</div>
+
+<!-- СОБЫТИЯ -->
+<div id="events-box">
+  <div class="events-hdr">
+    <span>📰 События месяца</span>
+    <span class="xbtn" onclick="document.getElementById('events-box').style.display='none'">✕</span>
+  </div>
+  <div id="events-list"></div>
+  <div class="events-hdr" style="border-top:1px solid #ddd;position:static">🏠 Внутри страны</div>
+  <div id="domestic-list"></div>
+</div>
+
+<!-- ДЕЙСТВИЯ -->
+<div id="actions-panel">
+  <div class="actions-hdr">
+    <span>⚡ Действия на этот ход</span>
+    <span class="xbtn" style="color:#67739a" onclick="document.getElementById('actions-panel').style.display='none'">✕</span>
+  </div>
+  <div class="actions-body">
+    <div id="actions-list"><div style="color:#7e89a3;font-size:11px;font-style:italic">Нет действий на этот ход</div></div>
+    <textarea id="action-input" placeholder="Опишите действие вашей страны... (например: отправить войска к границе)"></textarea>
+    <button class="add-action-btn" onclick="addAction()">+ Добавить действие</button>
+  </div>
+</div>
+
+<!-- СОВЕТНИК -->
+<div id="adv-pop">
+  <div class="pop-hdr">
+    <span>🎭 Советник</span>
+    <span class="xbtn" onclick="document.getElementById('adv-pop').style.display='none'">✕</span>
+  </div>
+  <div id="adv-messages">
+    <div class="adv-msg advisor">🎭 Ваше Превосходительство, готов отвечать на ваши вопросы о положении Франции.</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="adv-input" placeholder="Спросите советника..." onkeydown="advisorKeydown(event)">
+    <button class="chat-send" onclick="sendAdvisorMessage()">→</button>
+  </div>
+</div>
+
+<!-- ПАНЕЛЬ ОТНОШЕНИЙ -->
+<div id="relations-panel">
+  <div class="rel-hdr">
+    <span id="rel-country-name">Страна</span>
+    <span class="xbtn" onclick="closeRelationsPanel()">✕</span>
+  </div>
+  <div class="rel-body">
+    <div class="rel-leader" id="rel-leader"></div>
+    <div class="rel-annexed" id="rel-annexed" style="display:none"></div>
+    <div class="rel-stats" style="grid-template-columns:1fr">
+      <div><span class="lbl">🏛 Правление</span><span class="val" id="rel-government"></span></div>
+      <div style="font-size:10px;color:#707c98;line-height:1.5">Казна, армия и стабильность чужих держав скрыты — судите о них по новостям, слухам и переговорам.</div>
+      <div id="rel-treaties" style="margin-top:4px"></div>
+    </div>
+    <div class="rel-bar-track">
+      <div class="rel-bar" id="rel-bar" style="width:50%;background:#8a7a20;"></div>
+    </div>
+    <div class="rel-bar-labels"><span>-100 Враг</span><span>0</span><span>+100 Союзник</span></div>
+    <div class="rel-value-row">
+      <div class="rel-value" id="rel-value">0</div>
+      <div class="rel-status" id="rel-status">Нейтральные</div>
+    </div>
+    <button class="rel-diplo-btn" id="rel-diplo-btn">📜 Открыть переговоры</button>
+  </div>
+</div>
+
+<!-- ДИПЛОМАТИЯ -->
+<div id="diplo-pop">
+  <div class="pop-hdr">
+    <span>📜 Дипломатия</span>
+    <span class="xbtn" onclick="document.getElementById('diplo-pop').style.display='none'">✕</span>
+  </div>
+  <div id="diplo-countries"></div>
+  <div id="diplo-chat">
+    <div class="diplo-chat-hdr">
+      <span>Переговоры: <strong id="diplo-target"></strong></span>
+      <button class="back-btn" onclick="backToCountries()">← Назад</button>
+    </div>
+    <div id="diplo-messages"></div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="diplo-input" placeholder="Ваше послание..." onkeydown="diploKeydown(event)">
+      <button class="chat-send" onclick="sendDiploMessage()">→</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<!-- ВКЛАДКА ЭКОНОМИКА -->
+<div id="economy-panel" style="position:absolute;top:88px;right:14px;width:360px;max-height:calc(100vh - 110px);background:#0f1930;border:1px solid #bbb;border-radius:5px;z-index:210;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.2);overflow:hidden;flex-direction:column;">
+  <div class="pop-hdr" style="background:#1a3a2a;color:#fff">
+    <span>💼 Экономика страны</span>
+    <span class="xbtn" style="color:#cfc" onclick="closeEconomyPanel()">✕</span>
+  </div>
+  <div id="economy-body" style="padding:10px 13px;overflow-y:auto;max-height:46vh"></div>
+  <div style="border-top:2px solid #1a3a2a;background:#f6faf6">
+    <div style="font-size:11px;color:#1a3a2a;font-weight:bold;padding:7px 13px 0">💼 Придворный экономист</div>
+    <div id="econ-messages" style="height:130px;overflow-y:auto;padding:8px 13px;display:flex;flex-direction:column;gap:6px">
+      <div class="adv-msg advisor">💼 Ваше Превосходительство, спрашивайте — объясню, откуда деньги и куда уходят.</div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="econ-input" placeholder="Спросите экономиста..." onkeydown="economistKeydown(event)">
+      <button class="chat-send" onclick="sendEconomistMessage()">→</button>
+    </div>
+  </div>
+</div>
+
+<!-- ЛЕТОПИСЬ МИРА -->
+<div id="history-panel" style="position:absolute;top:88px;left:310px;width:400px;max-height:calc(100vh - 110px);background:#0f1930;border:1px solid #bbb;border-radius:5px;z-index:210;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
+  <div class="pop-hdr" style="background:#3a2a1a;color:#fff">
+    <span>📜 Летопись мира</span>
+    <span class="xbtn" style="color:#fc9" onclick="closeHistoryPanel()">✕</span>
+  </div>
+  <div id="history-body" style="padding:12px 14px;overflow-y:auto;max-height:60vh"></div>
+  <div style="padding:10px 14px;border-top:1px solid #eee">
+    <button class="editor-btn" id="history-write-btn" onclick="writeHistoryChapterNow()" style="margin:0">✍ Дописать главу сейчас</button>
+    <div style="font-size:10px;color:#707c98;margin-top:6px;line-height:1.5">Главы пишутся ИИ автоматически каждые 10 ходов — они остаются в памяти ИИ навсегда, даже когда старые новости забываются.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН «ОБЩЕСТВО»: Социум + Законы + министр внутренних дел -->
+<div id="society-screen" style="position:absolute;inset:0;z-index:450;background:rgba(10,10,15,0.55);display:none;align-items:center;justify-content:center;">
+  <div style="background:#f6f2e8;border-radius:6px;width:min(760px,94vw);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.5);overflow:hidden">
+    <div class="pop-hdr" style="background:#2a2a3a;color:#fff">
+      <span>👥 Общество — <span id="society-country-name"></span></span>
+      <span class="xbtn" style="color:#ccc" onclick="closeSocietyScreen()">✕</span>
+    </div>
+    <div style="display:flex;border-bottom:2px solid #2a2a3a">
+      <button id="society-tab-social" class="map-mode-btn active" style="flex:1;padding:9px" onclick="setSocietyTab('social')">👥 Социум</button>
+      <button id="society-tab-laws" class="map-mode-btn" style="flex:1;padding:9px" onclick="setSocietyTab('laws')">📖 Законы</button>
+    </div>
+    <div id="society-body" style="padding:14px 16px;overflow-y:auto;flex:1;min-height:200px"></div>
+    <div style="border-top:2px solid #2a2a3a;background:#f0ece2">
+      <div style="font-size:11px;color:#2a2a3a;font-weight:bold;padding:7px 14px 0">🏛 Министр внутренних дел</div>
+      <div id="society-messages" style="height:110px;overflow-y:auto;padding:8px 14px;display:flex;flex-direction:column;gap:6px">
+        <div class="adv-msg advisor">🏛 Ваше Превосходительство, доложу о состоянии общества и законах — спрашивайте.</div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="society-input" placeholder="Спросите министра..." onkeydown="societyKeydown(event)">
+        <button class="chat-send" onclick="sendSocietyMessage()">→</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ВЫБОР ТЕКСТОВОЙ МОДЕЛИ ИИ -->
+<div id="model-menu" style="position:absolute;inset:0;z-index:500;background:rgba(10,10,15,0.65);display:none;align-items:center;justify-content:center;">
+  <div class="load-box" style="min-width:420px">
+    <h3><span>🧠 Текстовая модель ИИ (OpenRouter)</span><span class="xbtn" onclick="closeModelMenu()">✕</span></h3>
+    <div style="font-size:11px;color:#95a0b8;margin-bottom:10px;line-height:1.5">Все текстовые вызовы (события, дипломатия, советники, профили стран, летопись) пойдут через выбранную модель с вашим ключом. Портреты — отдельная модель, не меняется здесь.</div>
+    <select id="model-select" style="width:100%;padding:8px;font-family:Georgia,serif;font-size:12px;margin-bottom:8px">
+      <option value="google/gemini-3.1-flash-lite">Gemini 3.1 Flash Lite — дефолт, очень дёшево</option>
+      <option value="google/gemini-3.1-flash">Gemini 3.1 Flash — умнее, дороже</option>
+      <option value="deepseek/deepseek-v3.2">DeepSeek V3.2 — дёшево, хорош в русском</option>
+      <option value="deepseek/deepseek-chat-v3.1">DeepSeek V3.1 — проверенный, дёшево</option>
+      <option value="x-ai/grok-4.1-fast">Grok 4.1 Fast — быстрый, дёшево</option>
+      <option value="openai/gpt-5-mini">GPT-5 mini — качественный, средняя цена</option>
+      <option value="z-ai/glm-4.6">GLM 4.6 — дёшево, длинный контекст</option>
+      <option value="meta-llama/llama-4-maverick">Llama 4 Maverick — дёшево</option>
+      <option value="__custom__">Свой слаг модели…</option>
+    </select>
+    <input type="text" id="model-custom" placeholder="Например: mistralai/mistral-small-3.2-24b-instruct" style="width:100%;padding:8px;font-family:Georgia,serif;font-size:12px;border:1px solid #2b3b5e;border-radius:3px;margin-bottom:10px">
+    <button class="load-close-btn" style="background:#1a2a4a;margin-bottom:8px" onclick="applyModelChoice()">✅ Применить</button>
+    <button class="load-close-btn" onclick="closeModelMenu()">Закрыть</button>
+  </div>
+</div>
+
+<script src="map.js?v=34"></script>
+<script src="ai.js?v=34"></script>
+<script src="game.js?v=34"></script>
+<script src="ui.js?v=34"></script>
+<script src="editor.js?v=34"></script>
+<script>initMenu(); initSkipSelect();</script>
+</body>
+</html>
